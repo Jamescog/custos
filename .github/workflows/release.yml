@@ -13,8 +13,6 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux/amd64
-          - os: windows-latest
-            platform: windows/amd64
 
     steps:
       - name: Checkout code
