@@ -9,5 +9,6 @@
   "author": {
     "name": "Jamescog",
     "email": "jamescog72@gmail.com"
-  }
+  },
+  "icon": "build/appicon.png"
 }

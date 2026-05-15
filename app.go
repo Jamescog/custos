@@ -94,48 +94,6 @@ func (a *App) startup(ctx context.Context) {
 	a.installDesktopFiles()
 }
 
-func (a *App) installDesktopFiles() {
-	execPath, err := os.Executable()
-	if err != nil {
-		return
-	}
-
-	// Skip writing if it's just `go run ...` which often outputs to /tmp/go-build*
-	if filepath.Base(execPath) == "main" || filepath.Ext(execPath) != "" {
-		return
-	}
-
-	desktopContent := fmt.Sprintf(`[Desktop Entry]
-Name=Custos
-Comment=System Battery Status & Notifications
-Exec=%s
-Terminal=false
-Type=Application
-Categories=Utility;HardwareSettings;
-Icon=battery
-Keywords=power;battery;charging;status;
-`, execPath)
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return
-	}
-
-	appsDir := filepath.Join(homeDir, ".local", "share", "applications")
-	os.MkdirAll(appsDir, 0755)
-	appDesktopPath := filepath.Join(appsDir, "custos.desktop")
-	if _, err := os.Stat(appDesktopPath); os.IsNotExist(err) {
-		os.WriteFile(appDesktopPath, []byte(desktopContent), 0644)
-	}
-
-	autostartDir := filepath.Join(homeDir, ".config", "autostart")
-	os.MkdirAll(autostartDir, 0755)
-	startDesktopPath := filepath.Join(autostartDir, "custos.desktop")
-	if _, err := os.Stat(startDesktopPath); os.IsNotExist(err) {
-		os.WriteFile(startDesktopPath, []byte(desktopContent), 0644)
-	}
-}
-
 func (a *App) monitorBattery() {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
@@ -168,14 +126,14 @@ func (a *App) monitorBattery() {
 			if !isOnBattery && percentage >= thresholdHigh {
 				title := "Battery Charged"
 				message := fmt.Sprintf("Battery has reached %.0f%%. Please disconnect the charger.", percentage)
-				err := beeep.Notify(title, message, "")
+				err := beeep.Alert(title, message, "")
 				if err == nil {
 					a.lastNotified = now
 				}
 			} else if isOnBattery && percentage <= thresholdLow {
 				title := "Battery Low"
 				message := fmt.Sprintf("Battery has dropped to %.0f%%. Please connect the charger.", percentage)
-				err := beeep.Notify(title, message, "")
+				err := beeep.Alert(title, message, "")
 				if err == nil {
 					a.lastNotified = now
 				}
@@ -223,6 +181,7 @@ func (a *App) GetBatteryStatus() string {
 
 	if display != nil && display.DisplayDevice != nil {
 		snapshot.DeviceName = "Display battery"
+		snapshot.Percentage = display.DisplayDevice.Percentage
 		snapshot.State = display.DisplayDevice.State
 		snapshot.StateLabel = batteryStateLabel(display.DisplayDevice.State)
 		snapshot.Energy = display.DisplayDevice.Energy

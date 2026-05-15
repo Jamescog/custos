@@ -1,3 +1,5 @@
+//go:build linux
+
 package main
 
 import (
@@ -8,71 +10,6 @@ import (
 	"strings"
 	"time"
 )
-
-type UPowerData struct {
-	Devices []Device
-	Daemon  DaemonInfo
-}
-
-type Device struct {
-	Path          string
-	NativePath    string
-	Vendor        string
-	Model         string
-	Serial        string
-	PowerSupply   bool
-	Updated       time.Time
-	UpdatedAgo    time.Duration
-	HasHistory    bool
-	HasStatistics bool
-	Battery       *BatteryInfo
-	LinePower     *LinePowerInfo
-	DisplayDevice *DisplayDeviceInfo
-}
-
-type BatteryInfo struct {
-	Present          bool
-	Rechargeable     bool
-	State            string
-	WarningLevel     string
-	Energy           float64
-	EnergyEmpty      float64
-	EnergyFull       float64
-	EnergyFullDesign float64
-	EnergyRate       float64
-	Voltage          float64
-	ChargeCycles     int
-	Percentage       float64
-	Capacity         float64
-	Technology       string
-	IconName         string
-}
-
-type LinePowerInfo struct {
-	WarningLevel string
-	Online       bool
-	IconName     string
-}
-
-type DisplayDeviceInfo struct {
-	Present      bool
-	State        string
-	WarningLevel string
-	Energy       float64
-	EnergyFull   float64
-	EnergyRate   float64
-	ChargeCycles string // Can be "N/A" or number
-	Percentage   float64
-	IconName     string
-}
-
-type DaemonInfo struct {
-	DaemonVersion  string
-	OnBattery      bool
-	LidIsClosed    bool
-	LidIsPresent   bool
-	CriticalAction string
-}
 
 func ParseUPowerOutput(output string) (*UPowerData, error) {
 	data := &UPowerData{
@@ -286,7 +223,6 @@ func parseDaemonSection(scanner *bufio.Scanner, data *UPowerData) {
 }
 
 func parseFloat(value string) float64 {
-	// Remove units
 	parts := strings.Fields(value)
 	if len(parts) > 0 {
 		val, err := strconv.ParseFloat(parts[0], 64)
@@ -306,7 +242,6 @@ func parseInt(value string) int {
 }
 
 func parsePercentage(value string) float64 {
-	// Remove % sign
 	value = strings.TrimSuffix(value, "%")
 	val, err := strconv.ParseFloat(value, 64)
 	if err != nil {
@@ -315,7 +250,6 @@ func parsePercentage(value string) float64 {
 	return val
 }
 
-// QueryUPower runs the upower command and returns parsed data
 func QueryUPower() (*UPowerData, error) {
 	cmd := exec.Command("upower", "-d")
 	output, err := cmd.Output()
@@ -324,52 +258,4 @@ func QueryUPower() (*UPowerData, error) {
 	}
 
 	return ParseUPowerOutput(string(output))
-}
-
-// Helper methods for easy access to common information
-
-// GetBattery returns the main battery device (if exists)
-func (d *UPowerData) GetBattery() *Device {
-	for i := range d.Devices {
-		if d.Devices[i].Battery != nil && d.Devices[i].NativePath == "BAT0" {
-			return &d.Devices[i]
-		}
-	}
-	return nil
-}
-
-// GetACAdapter returns the AC adapter device (if exists)
-func (d *UPowerData) GetACAdapter() *Device {
-	for i := range d.Devices {
-		if d.Devices[i].LinePower != nil {
-			return &d.Devices[i]
-		}
-	}
-	return nil
-}
-
-// GetDisplayDevice returns the display device (if exists)
-func (d *UPowerData) GetDisplayDevice() *Device {
-	for i := range d.Devices {
-		if d.Devices[i].DisplayDevice != nil {
-			return &d.Devices[i]
-		}
-	}
-	return nil
-}
-
-// IsOnBattery returns true if system is running on battery
-func (d *UPowerData) IsOnBattery() bool {
-	return d.Daemon.OnBattery
-}
-
-// GetBatteryPercentage returns the current battery percentage
-func (d *UPowerData) GetBatteryPercentage() float64 {
-	if battery := d.GetBattery(); battery != nil && battery.Battery != nil {
-		return battery.Battery.Percentage
-	}
-	if display := d.GetDisplayDevice(); display != nil && display.DisplayDevice != nil {
-		return display.DisplayDevice.Percentage
-	}
-	return 0
 }
