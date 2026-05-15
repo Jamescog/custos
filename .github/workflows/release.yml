@@ -46,7 +46,7 @@ jobs:
 
       - name: Build App
         run: |
-          xvfb-run --auto-servernum wails build -platform ${{ matrix.platform }} -ldflags "-X main.version=${{ github.ref_name }}"
+          xvfb-run --auto-servernum wails build -platform ${{ matrix.platform }} -tags webkit2gtk_4_1 -ldflags "-X main.version=${{ github.ref_name }}"
 
       - name: Package Linux (DEB)
         if: matrix.os == 'ubuntu-latest'
@@ -80,6 +80,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          draft: true
           files: |
             artifacts/**/*
         env:
