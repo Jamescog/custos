@@ -24,7 +24,9 @@ mkdir -p \
   "$STAGE_DIR/usr/share/icons/hicolor/256x256/apps" \
   "$STAGE_DIR/usr/share/metainfo"
 
-wails build -platform "linux/$ARCH"
+if [[ -z "${SKIP_BUILD:-}" ]]; then
+  wails build -platform "linux/$ARCH"
+fi
 
 BIN_PATH="$(find "$BIN_DIR" -maxdepth 1 -type f -perm -111 -name "${APP_NAME}*" | head -n 1)"
 if [[ -z "$BIN_PATH" ]]; then
