@@ -25,7 +25,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             platform: linux/amd64
             artifact-name: linux-amd64-build
 
@@ -50,7 +50,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev build-essential xvfb
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev build-essential xvfb
 
       - name: Build Frontend
         run: |
@@ -60,7 +60,7 @@ jobs:
 
       - name: Build App
         run: |
-          xvfb-run --auto-servernum wails build -platform ${{ matrix.platform }} -tags webkit2gtk_4_1 -ldflags "-X main.version=${{ github.ref_name || inputs.version }}"
+          xvfb-run --auto-servernum wails build -platform ${{ matrix.platform }} -ldflags "-X main.version=${{ github.ref_name || inputs.version }}"
 
       - name: Package Linux (DEB)
         run: ./scripts/package-deb.sh
